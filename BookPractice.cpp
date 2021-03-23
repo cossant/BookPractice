@@ -5,19 +5,25 @@ using namespace std;
 class person
 {
 private:
-	char info[];
+	char info[100];
 public:
 	person() 
 	{
+		
+	}
+	void fill()
+	{
 		cout << "Введите данные нового сотрудника в формате <Имя> <Фамилия> <должность> <личный код>\n";
-		cin.getline(info,100);
+		cin.ignore(); //Полумера. Вызывает игноррирование первого символа
+		//cin.ignore(numeric_limits<streamsize>::max(), '\n');
+		cin.getline(info, 100);
+		
 	}
 
-	~person()
+	/*~person()
 	{
-		delete info;
-		delete this;
-	}
+		delete [] info;
+	}*/
 
 	char* get_info()
 	{
@@ -25,9 +31,15 @@ public:
 	}
 };
 
-ostream& operator << (ostream& stream, person& per)
+ofstream& operator << (ofstream& stream, person& per)
 {
 	stream.write(reinterpret_cast<char*>(&per), sizeof(per));
+	return stream;
+}
+
+ifstream& operator >> (ifstream& stream,person& per)
+{
+	stream.read(reinterpret_cast<char*>(&per), sizeof(per));
 	return stream;
 }
 
@@ -46,12 +58,12 @@ int main()
 
 
 
-	ofstream workFile;
-	workFile.open("persSvgs.dat");
+	ofstream * workFile = new ofstream();
+	workFile->open("persSvgs.dat",ios::binary);
 
 
 
-	if (workFile.fail())
+	if (workFile->fail())
 	{
 		cout << "Ошибка при открытии/создании файла.";
 		return (-1);
@@ -59,9 +71,20 @@ int main()
 	do
 	{
 		person* curr_pers = new person();
-		workFile << curr_pers;
-		workFile.close();
+		curr_pers->fill();
+		*workFile << *curr_pers;
 		delete curr_pers;
 		cout << "Требуется задать нового сотрудника? Y/N\n";
 	} while (answ_is_yes());
+	workFile->close();
+
+	ifstream iFile("persSvgs.dat", ios::binary);
+	while (!iFile.eof())
+	{
+		person* outpers = new person();
+		iFile >> *outpers;
+		if (!iFile.eof())
+			cout << "Считан сотрудник " << outpers->get_info() << endl;
+		delete outpers;
+	}
 }
